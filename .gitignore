@@ -7,4 +7,11 @@
 *.pdf
 *.rar
 *.zip
+*.tokens
+*.interp
+*.class
+.antlr/
+*Listener.java
+*Parser.java
+*Lexer.java
 
