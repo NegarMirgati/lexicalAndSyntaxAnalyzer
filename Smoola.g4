@@ -1,8 +1,7 @@
 // Define a grammar called Smoola
 grammar Smoola;
 prog:	(expr NEWLINE)* ;
-expr:	expr ('*'|'/') expr
-    |	expr ('+'|'-') expr
+expr:	ID
     |	INT
     |	type
 
