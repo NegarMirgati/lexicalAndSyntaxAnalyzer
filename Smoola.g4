@@ -7,7 +7,16 @@ grammar Smoola;
   }
 }
 
-prog:	(COMMENT)* (class_block)* (COMMENT)* ;
+prog:	(COMMENT)* (main_class)(class_block)* (COMMENT)* ;
+
+main_class : 'class' ID '{' (main_method) '}';
+
+main_method : ('def')('main()')(COLON) INT '{' (main_body) '}';
+
+
+main_body : // return statement and function call 
+
+
 
 class_block:
        ('Class') ID '{' (inner) + ('\n')* '}' ;
@@ -73,8 +82,12 @@ RPAR : ')';
 LPAR : '(';
 STRING : '"' ' .*? ' '"';
 SEMICOLON : ';';
+COLON : ':';
 LOGICALAND : '&&';
 LOGICALOR : '||';
+WS:
+    	[ \t] -> skip
+;
 
 
 
