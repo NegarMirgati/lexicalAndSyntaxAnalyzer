@@ -25,26 +25,29 @@ var:
 	;      
 
 inner:
-       (if_block | method_block | body_block | var)+ ;  
+       (if_block | method_block | statement | while_block | var)+ ;  
+      
 type:
        ('int') | ('char') |('boolean')|('string')| ('Class')|{print("type");};
 
-if_block: 'if' (expr) 'then' (condition_block) | 'if' (expr) (condition_block) 'else' (condition_block);
+if_block: 'if' (expr) 'then' (condition_block) | 'if' (expr)  (condition_block) 'else' (condition_block); // if dovom 'then' nemikhaaad?? 
 
 condition_block : ('{' (statement)+ '}') | statement
       {print("condition block");};
 
 //expr :
 
-statement : (( assignment  | if_block ) NEWLINE)*;
+statement : (( (assignment ';')  | if_block ) NEWLINE)*; /// Akhar har assignment ';' mikhad
+//inja faghat assign mikonad?? kar e dige nadareh?
 
+assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | CHARACTER | ARITHNUM | assignment));  //ARITHNUM ?? operation??
+																																	///added BOOLEAN 
+																																	///assignment ->assignment 
 
-assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | CHARACTER | ARITHNUM | assignment));
-
-//operation : 
-
-
-while_block : 'while' LPAR expr RPAR '{' (statement)+ '}' ;
+array_init :
+		('new') type ID '[' INT ']'
+		;
+while_block : ('while') '(' ID LPAR RPAR  INT ')' '{' (statement)+ '}' ; ///while_block changed!!
 
 
 body_block:
@@ -55,9 +58,11 @@ return_val:
 		;       
 
 method_block:
-            ('def') ID '(' (vardef ',')* (vardef) ')' ':' type  '{' ('\n') ( if_block | body_block ) + 'return' return_val '}';   
-vardef:
-         type ID ////parameter of argumant function
+            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' type  '{' (NEWLINE)* ( statement | while_block) + 'return' return_val '}'; 
+
+
+vardef:			//type baraye vardef mitooneh name ye class dige bash && 
+         ID ':' type
        ;   
 
 writeln : 'writeln' LPAR (STRING | INT | ID) RPAR SEMICOLON  ; /////array
@@ -67,6 +72,7 @@ NEWLINE: ('\n')+;
 COMMENT: '#'(~[\r\n])* -> skip;     
 INT : [0-9]+;
 ID  : [a-zA-Z-][a-zA-Z0-9-]* {System.out.println("ID "+getText());};
+BOOLEAN: 'true' | 'false' ;
 EQUAL: '==';
 NOTEQUAL: '<>';
 LT: '<';
