@@ -7,72 +7,77 @@ grammar Smoola;
   }
 }
 
-prog:	(COMMENT)* (main_class)(class_block)* (COMMENT)* ;
+prog:	(main_class)(class_stm)* ;
 
 main_class : 'class' ID '{' (main_method) '}';
 
-main_method : ('def')('main()')(COLON) INT '{' (main_body) '}';
+main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';
 
+main_method_body : (function_call)* ('return')(statement); // statement? 
 
-main_body : // return statement and function call 
+function_call_stm : 'new' (ID)(LPAR)'.'(METHODNAME)(LPAR)(function_arguments)(RPAR)(SEMICOLON);
 
+function_arguments : (ID(','))*ID | ;
 
+class_stm:
+       (('Class') ID '{' (class_body) + ('\n')* '}') {print('ClassDec: + getText());} | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
 
-class_block:
-       ('Class') ID '{' (inner) + ('\n')* '}' ;
-var:
-	'var' ID ':' type ';'
-	;      
-
-inner:
-       (if_block | method_block | statement | while_block | var)+ ;  
+class_body:
+       (vardef)* (method_block)* ;  
       
-type:
-       ('int') | ('char') |('boolean')|('string')| ('Class')|{print("type");};
+primitivetype:
+       ('int') | ('boolean') | ('string')| CLASS {print("type");};
 
-if_block: 'if' (expr) 'then' (condition_block) | 'if' (expr)  (condition_block) 'else' (condition_block); // if dovom 'then' nemikhaaad?? 
+arraytype : ('int') (LBRAC) (RBRAC);
+
+if_stm: 'if' (expr) 'then' (condition_block) | 'if' (expr) 'then' (condition_block) 'else' (condition_block); 
 
 condition_block : ('{' (statement)+ '}') | statement
       {print("condition block");};
 
-//expr :
+expr : boolean_expr | (expr) ; // TODO complete this part
 
-statement : (( (assignment ';')  | if_block ) NEWLINE)*; /// Akhar har assignment ';' mikhad
+boolean_term : ((ID | STRING | INT) (EQUAL | NOTEQUAL) (ID | STRING | INT )) | (INT) | (ID) ;
+boolean_expression : (boolean_term) | (boolean_expression (LOGICALAND) boolean_term) | (boolean_expression (LOGICALOR) boolean_term) | ('!')boolean_term;
+
+statement : (( (assignment ';')  | if_stm | while_stm))*; /// Akhar har assignment ';' mikhad
 //inja faghat assign mikonad?? kar e dige nadareh?
 
-assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | CHARACTER | ARITHNUM | assignment));  //ARITHNUM ?? operation??
-																																	///added BOOLEAN 
-																																	///assignment ->assignment 
+assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | INT)); 
+																																
 
-array_init :
-		('new') type ID '[' INT ']'
-		;
-while_block : ('while') '(' ID LPAR RPAR  INT ')' '{' (statement)+ '}' ; ///while_block changed!!
+array_init : 
+		('new') 'int' ID '[' INT ']';
 
-
-body_block:
-		(ID)*;
+while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (statement)+ '}' {print('LOOP : While');} ;
 
 return_val:
 		ID
 		;       
 
 method_block:
-            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' type  '{' (NEWLINE)* ( statement | while_block) + 'return' return_val '}'; 
+            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' type  '{' (NEWLINE)* ( statement | while_stm) ('return')(return_val) '}'; 
 
 
-vardef:			//type baraye vardef mitooneh name ye class dige bash && 
-         ID ':' type
+primitivevardef:			//type baraye vardef mitooneh name ye class dige bash && 
+         ('var') ID (COLON) (type) (SEMICOLON)
        ;   
 
-writeln : 'writeln' LPAR (STRING | INT | ID) RPAR SEMICOLON  ; /////array
+writeln : 'writeln' LPAR (STRING | INT | ID | function_call) RPAR SEMICOLON  ; /////array
 
 
-NEWLINE: ('\n')+;   
-COMMENT: '#'(~[\r\n])* -> skip;     
+/* primitive types */   
 INT : [0-9]+;
-ID  : [a-zA-Z-][a-zA-Z0-9-]* {System.out.println("ID "+getText());};
-BOOLEAN: 'true' | 'false' ;
+STRING : '"' ' .*? ' '"';
+BOOLEAN:  TRUE | FALSE ;
+TRUE : 'true';
+FALSE : 'false';
+
+/* non-primitive types */
+CLASS : 'class';
+
+ID  : [a-zA-Z-][a-zA-Z0-9-]* {print("ID "+getText());};
+
 EQUAL: '==';
 NOTEQUAL: '<>';
 LT: '<';
@@ -86,11 +91,12 @@ LBRAC: '[';
 RBRAC: ']';
 RPAR : ')';
 LPAR : '(';
-STRING : '"' ' .*? ' '"';
 SEMICOLON : ';';
 COLON : ':';
 LOGICALAND : '&&';
 LOGICALOR : '||';
+COMMENT: '#'(~[\r\n])* -> skip;
+NEWLINE: ('\n')+ -> skip;   
 WS:
     	[ \t] -> skip
 ;
