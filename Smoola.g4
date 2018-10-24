@@ -32,6 +32,7 @@ arraytype : ('int') (LBRAC) (RBRAC);
 
 if_stm: 'if' (expr) 'then' (condition_block) | 'if' (expr) 'then' (condition_block) 'else' (condition_block); 
 
+
 condition_block : ('{' (statement)+ '}') | statement
       {print("condition block");};
 
@@ -51,10 +52,27 @@ array_init :
 
 while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (statement)+ '}' {print('LOOP : While');} ;
 
-return_val:
-		ID
-		;       
 
+variable:
+		ID | INT | BOOLEAN
+		;	
+
+function:
+		ID '(' ((variable ',')* variable |) ')'
+		;	
+
+return_val:
+		('0' | operation_expr | ID '.' function) ';'
+		;     
+operation:
+		ADD | SUB | MULT | DIV 
+		;		  
+operation_expr:
+		ID (operation ID)*
+		;
+method_declare:
+		('def') ID '(' (vardef ',')* (vardef) ')' |  ID '(' ')'
+		;		
 method_block:
             ('def') ID '(' (vardef ',')* (vardef |) ')' ':' type  '{' (NEWLINE)* ( statement | while_stm) ('return')(return_val) '}'; 
 
