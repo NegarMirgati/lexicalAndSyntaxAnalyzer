@@ -9,11 +9,11 @@ grammar Smoola;
 
 prog:	(main_class)(class_stm)* ;
 
-main_class : 'class' ID '{' (main_method) '}';
+main_class : 'class' ID '{' ( main_method)  '}';
 
 main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';
 
-main_method_body : (function_call)* ('return')(statement); // statement? 
+main_method_body : (function_call |statement | primitivevardef)* ('return')(return_val); // functoin_call??
 
 function_call_stm : 'new' (ID)(LPAR)'.'(METHODNAME)(LPAR)(function_arguments)(RPAR)(SEMICOLON);
 
@@ -23,25 +23,28 @@ class_stm:
        (('Class') ID '{' (class_body) + ('\n')* '}') {print('ClassDec: + getText());} | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
 
 class_body:
-       (vardef)* (method_block)* ;  
+       (primitivevardef)* (method_block)* ;  
       
 primitivetype:
        ('int') | ('boolean') | ('string')| CLASS {print("type");};
 
 arraytype : ('int') (LBRAC) (RBRAC);
 
-if_stm: 'if' (expr) 'then' (condition_block) | 'if' (expr) 'then' (condition_block) 'else' (condition_block); 
+if_stm: 'if' '(' expr ')' 'then' (condition_block1) | 'if' '(' expr ')' 'then' (condition_block1) 'else' (condition_block2); 
 
 
-condition_block : ('{' (statement)+ '}') | statement
+condition_block1 : ('{' (statement)+ '}') 
       {print("condition block");};
+
+condition_block2 : statement
+      {print("condition block");};      
 
 expr : boolean_expr | (expr) ; // TODO complete this part
 
 boolean_term : ((ID | STRING | INT) (EQUAL | NOTEQUAL) (ID | STRING | INT )) | (INT) | (ID) ;
 boolean_expression : (boolean_term) | (boolean_expression (LOGICALAND) boolean_term) | (boolean_expression (LOGICALOR) boolean_term) | ('!')boolean_term;
 
-statement : (( (assignment ';')  | if_stm | while_stm))*; /// Akhar har assignment ';' mikhad
+statement : (( (assignment)  | if_stm | while_stm))*; 
 //inja faghat assign mikonad?? kar e dige nadareh?
 
 assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | INT)); 
@@ -74,11 +77,11 @@ method_declare:
 		('def') ID '(' (vardef ',')* (vardef) ')' |  ID '(' ')'
 		;		
 method_block:
-            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' type  '{' (NEWLINE)* ( statement | while_stm) ('return')(return_val) '}'; 
+            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' primitivetype  '{' (NEWLINE)* ( statement | while_stm) ('return')(return_val) '}'; 
 
 
 primitivevardef:			//type baraye vardef mitooneh name ye class dige bash && 
-         ('var') ID (COLON) (type) (SEMICOLON)
+         ('var') ID (COLON) (primitivetype) (SEMICOLON)
        ;   
 
 writeln : 'writeln' LPAR (STRING | INT | ID | function_call) RPAR SEMICOLON  ; /////array
@@ -109,7 +112,7 @@ LBRAC: '[';
 RBRAC: ']';
 RPAR : ')';
 LPAR : '(';
-SEMICOLON : ';';
+SEMICOLON : ';' -> skip;
 COLON : ':';
 LOGICALAND : '&&';
 LOGICALOR : '||';
