@@ -7,78 +7,101 @@ grammar Smoola;
   }
 }
 
-prog:	(main_class)(class_stm)* ;
+prog:	(main_class)(class_def)* ;
 
-/*main*/
+/*main class and main method*/
+main_class : 'class' ID '{' (main_method)  '}';
 
-main_class : 'class' ID '{' ( main_method)  '}';
+main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';     ////// not completed
 
-main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';
+// main method can't have any function calls rather that writeln because those are expressions
+// and we don't have any variables in main class and main method 
+main_method_body : (writeln)* ('return') (statement);  
 
-main_method_body : (function_call |statement | primitivevardef)* ('return')(return_val); // functoin_call??
+// this is a expression
+// are method names the same is identifier names ?
+function_call : 'new' (ID)(LPAR)'.'(ID)(LPAR)(function_arguments)(RPAR)(SEMICOLON) 
+				| 'this.' (ID)(LPAR)(function_arguments)(RPAR)(SEMICOLON);
 
-function_call_stm : 'new' (ID)(LPAR)'.'(METHODNAME)(LPAR)(function_arguments)(RPAR)(SEMICOLON);
-
-function_arguments : (ID(','))*ID | ;
+function_arguments : (variable (',') )* variable | ;
 
 /*class*/
 
-class_stm:
-       (('Class') ID '{' (class_body) + ('\n')* '}') {print('ClassDec: + getText());} | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
+class_def:
+       (('Class') ID '{' (class_body) '}') {print('ClassDec: + getText());} 
+	   | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
+
 class_body:
        (primitivevardef)* (method_block)* ;  
 
-      
 primitivetype:
-       ('int') | ('boolean') | ('string')| CLASS {print("type");};
+       ('int') | ('boolean') | ('string') | arraytype {print("type");};
 
 arraytype : ('int') (LBRAC) (RBRAC);
+
 array_init : 
 		('new') 'int' ID '[' INT ']';
 
 /* IF */
-if_stm: 'if' '(' expr ')' 'then' (condition_block1) | 'if' '(' expr ')' 'then' (condition_block1) 'else' (condition_block2); 
+stm_if: 'if' LPAR expr_tot RPAR 'then' (statement)
+		| 'if' LPAR expr_tot RPAR 'then' (statement) 'else' (statement); 
 
+stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
 
-condition_block1 : ('{' (statement)+ '}') 
-      {print("condition block");};
-condition_block2 : statement
-      {print("condition block");};   
+stm_assign: (ID ASSIGN {print("assignment");} expr_tot ) SEMICOLON; 
 
+stm_vardef : 'var' (ID) COLON (primitivetype | ID) ;
+// ID for class type
 
-expr : boolean_expr | (expr) ; // TODO complete this part
+statement: stm_vardef SEMICOLON 
+		   | stm_assign SEMICOLON 
+		   | stm_while 
+		   | writeln SEMICOLON
+		   stm_if;
 
-boolean_term : ((ID | STRING | INT) (EQUAL | NOTEQUAL) (ID | STRING | INT )) | (INT) | (ID) ;
-boolean_expression : (boolean_term) | (boolean_expression (LOGICALAND) boolean_term) | (boolean_expression (LOGICALOR) boolean_term) | ('!')boolean_term;
+expr: expr_assign;
 
-statement : (( sub_statement | while_stm))*; 
-//inja faghat assign mikonad?? kar e dige nadareh?
+expr_assign: expr_or (ASSIGN) expr_assign | expr_or;
 
-sub_statement:
-		(assignment)  | if_stm
-		;
-assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | INT)); 
-																																
+expr_or: expr_and expr_or_tmp;
 
+expr_or_tmp: (LOGICALOR) expr_and expr_or_tmp| ;
 
-while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
+expr_and: expr_eq expr_and_tmp;
 
+expr_and_tmp: (LOGICALAND) expr_eq expr_and_tmp | ;
 
-	
+expr_eq: expr_cmp expr_eq_tmp;
+
+expr_eq_tmp: (EQUAL | NOTEQUAL) expr_cmp expr_eq_tmp | ;
+
+expr_cmp: expr_add expr_cmp_tmp ;
+
+expr_cmp_tmp: ('<' | '>') expr_add expr_cmp_tmp| ;
+
+expr_add: expr_mult expr_add_tmp;
+
+expr_add_tmp : ('+' | '-') expr_mult expr_add_tmp | ;
+
+expr_mult: expr_un expr_mult_tmp;
+
+expr_mult_tmp: ('*' | '/') expr_un expr_mult_tmp | ;
+
+expr_un : ('!' | '-') expr_un | expr_arr ;
+
+expr_arr: expr_other expr_arr_tmp ;
+
+expr_arr_tmp: '[' expr ']' expr_arr_tmp | ;
+
+expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | '(' expr ')');
+																															
 /* metod  */
 function:
 		ID '(' ((variable ',')* variable |) ')'
 		;	
 
-return_val:
-		('0' | operation_expr | ID '.' function) ';'
-		;     
-operation:
-		ADD | SUB | MULT | DIV 
-		;		  
-operation_expr:
-		ID (operation ID)*
-		;
+return_val : statement;  // in this phase we do not check the statement type after return
+  
 method_declare:
 		('def') ID '(' (vardef ',')* (vardef) ')' |  ID '(' ')'
 		;		
@@ -88,26 +111,38 @@ vardef:
 method_block:
             ('def') ID '(' (vardef ',')* (vardef |) ')' ':' primitivetype  '{' (NEWLINE)* ( statement ) ('return')(return_val) '}'; 
 
-
 primitivevardef:			//type baraye vardef mitooneh name ye class dige bash && 
          ('var') ID (COLON) (primitivetype) (SEMICOLON)
        ;   
 
-writeln : 'writeln' LPAR (STRING | INT | ID | function_call) RPAR SEMICOLON  ; /////array
-
+writeln : 'writeln' LPAR (expr_tot) RPAR; //// array
 
 /* primitive types */   
-variable:
-		ID | INT | BOOLEAN
-		;
-INT : [0-9]+;
-STRING : '"' ' .*? ' '"';
-BOOLEAN:  TRUE | FALSE ;
+variable: ID | CONST_INT | CONST_BOOLEAN | CONST_BOOLEAN |  ;
+
+CONST_INT : [0-9]+;
+CONST_STRING : '"' ' .*? ' '"';
+CONST_BOOLEAN:  TRUE | FALSE ;
+
+// KEYWORDS
+BOOLEAN : 'boolean';
+STRING : 'string';
+INT : 'int';
+CLASS : 'class';
+DEF : 'def';
+THEN : 'then';
+IF : 'if';
+WRITELN : 'writeln';
+EXTENDS : 'extends';
+VAR : 'var';
+THIS : 'this';
 TRUE : 'true';
 FALSE : 'false';
+WHILE : 'while';
+ELSE : 'else';
+RETURN : 'return';
+NEW : 'new';
 
-/* non-primitive types */
-CLASS : 'class';
 
 ID  : [a-zA-Z-][a-zA-Z0-9-]* {print("ID "+getText());};
 
@@ -124,7 +159,7 @@ LBRAC: '[';
 RBRAC: ']';
 RPAR : ')';
 LPAR : '(';
-SEMICOLON : ';' -> skip;
+SEMICOLON : ';' ;
 COLON : ':';
 LOGICALAND : '&&';
 LOGICALOR : '||';
