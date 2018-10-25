@@ -44,16 +44,19 @@ expr : boolean_expr | (expr) ; // TODO complete this part
 boolean_term : ((ID | STRING | INT) (EQUAL | NOTEQUAL) (ID | STRING | INT )) | (INT) | (ID) ;
 boolean_expression : (boolean_term) | (boolean_expression (LOGICALAND) boolean_term) | (boolean_expression (LOGICALOR) boolean_term) | ('!')boolean_term;
 
-statement : (( (assignment)  | if_stm | while_stm))*; 
+statement : (( sub_statement | while_stm))*; 
 //inja faghat assign mikonad?? kar e dige nadareh?
 
+sub_statement:
+		(assignment)  | if_stm
+		;
 assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | INT)); 
 																																
 
 array_init : 
 		('new') 'int' ID '[' INT ']';
 
-while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (statement)+ '}' {print('LOOP : While');} ;
+while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
 
 
 variable:
