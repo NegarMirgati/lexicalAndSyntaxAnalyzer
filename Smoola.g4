@@ -9,6 +9,8 @@ grammar Smoola;
 
 prog:	(main_class)(class_stm)* ;
 
+/*main*/
+
 main_class : 'class' ID '{' ( main_method)  '}';
 
 main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';
@@ -19,25 +21,30 @@ function_call_stm : 'new' (ID)(LPAR)'.'(METHODNAME)(LPAR)(function_arguments)(RP
 
 function_arguments : (ID(','))*ID | ;
 
+/*class*/
+
 class_stm:
        (('Class') ID '{' (class_body) + ('\n')* '}') {print('ClassDec: + getText());} | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
-
 class_body:
        (primitivevardef)* (method_block)* ;  
+
       
 primitivetype:
        ('int') | ('boolean') | ('string')| CLASS {print("type");};
 
 arraytype : ('int') (LBRAC) (RBRAC);
+array_init : 
+		('new') 'int' ID '[' INT ']';
 
+/* IF */
 if_stm: 'if' '(' expr ')' 'then' (condition_block1) | 'if' '(' expr ')' 'then' (condition_block1) 'else' (condition_block2); 
 
 
 condition_block1 : ('{' (statement)+ '}') 
       {print("condition block");};
-
 condition_block2 : statement
-      {print("condition block");};      
+      {print("condition block");};   
+
 
 expr : boolean_expr | (expr) ; // TODO complete this part
 
@@ -53,16 +60,12 @@ sub_statement:
 assignment: (ID ASSIGN {print("assignment");} ( operation | array_init | ID | STRING | BOOLEAN | INT)); 
 																																
 
-array_init : 
-		('new') 'int' ID '[' INT ']';
 
 while_stm : ('while') (LPAR) (boolean_expression) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
 
 
-variable:
-		ID | INT | BOOLEAN
-		;	
-
+	
+/* metod  */
 function:
 		ID '(' ((variable ',')* variable |) ')'
 		;	
@@ -79,8 +82,11 @@ operation_expr:
 method_declare:
 		('def') ID '(' (vardef ',')* (vardef) ')' |  ID '(' ')'
 		;		
+vardef:
+		ID ':' primitivetype
+		;		
 method_block:
-            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' primitivetype  '{' (NEWLINE)* ( statement | while_stm) ('return')(return_val) '}'; 
+            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' primitivetype  '{' (NEWLINE)* ( statement ) ('return')(return_val) '}'; 
 
 
 primitivevardef:			//type baraye vardef mitooneh name ye class dige bash && 
@@ -91,6 +97,9 @@ writeln : 'writeln' LPAR (STRING | INT | ID | function_call) RPAR SEMICOLON  ; /
 
 
 /* primitive types */   
+variable:
+		ID | INT | BOOLEAN
+		;
 INT : [0-9]+;
 STRING : '"' ' .*? ' '"';
 BOOLEAN:  TRUE | FALSE ;
