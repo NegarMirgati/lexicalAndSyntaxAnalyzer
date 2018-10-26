@@ -27,7 +27,7 @@ class_body:
        (stm_vardef)* (method_block)* ;  
 
 method_block:
-            ('def') methodname = ID '(' ((funcvardef ',')* (funcvardef |))  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) '}'
+            ('def') methodname = ID '(' ((funcvardef ',')* (funcvardef |))  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) SEMICOLON '}'
 			{print("MethodDec:" + $methodname.text);}; 
 
 funcvardef:
@@ -37,7 +37,7 @@ funcvardef:
 // this is a expression
 function_call : get_length;
 get_length : func_call | (ID)('.')('length');
-func_call : 'new' (ID) (LPAR) '.' (ID) (LPAR)(function_arguments)(RPAR)
+func_call : (class_object_init) '.' (ID) (LPAR)(function_arguments)(RPAR)
 				| 'this.' (ID)(LPAR)(function_arguments)(RPAR)
 				| (ID) ('.')(ID) (LPAR)(function_arguments)(RPAR);
 
@@ -48,7 +48,8 @@ primitivetype:  ('int') | ('boolean') | ('string') {print("type");};
 
 array_init : ('new') 'int' ('[') expr_tot (']');   // expr_tot return value must be an int, will be checked in next phases.
 
-class_object_init : ('new') ID LPAR RPAR;
+class_object_initprime : ('new') ID LPAR RPAR ;
+class_object_init :  '('class_object_initprime')' | class_object_initprime ;
 
 arraytype : ('int') (LBRAC) (RBRAC){print("type");};
 
@@ -69,7 +70,7 @@ statement: stm_vardef SEMICOLON
 		   | stm_assign SEMICOLON 
 		   | stm_while 
 		   | writeln SEMICOLON
-		   |stm_if
+		   | stm_if
 		   | '{' statement '}';
 
 expr: expr_assign;
@@ -108,13 +109,13 @@ expr_arr_tmp: '[' expr ']' expr_arr_tmp | ;
 
 expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | array_init | class_object_init | function_call | '(' expr ')');
 																															
-return_val : statement;  // in this phase we do not check the statement type after return
+return_val : expr_tot;  // in this phase we do not check the statement type after return
 
 // this is a statement, doesn't have return value  	 
 writeln : 'writeln' LPAR (expr_tot) RPAR; 
 
 CONST_INT : [0-9]+;
-CONST_STR : '"' ' .*? ' '"';
+CONST_STR : '"' ~'\n'*? '"';
 CONST_BOOLEAN:  TRUE | FALSE ;
 
 // KEYWORDS
