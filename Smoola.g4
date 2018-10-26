@@ -12,11 +12,11 @@ prog: (main_class)(class_def)* ;
 /*main class and main method*/
 main_class : 'class' (classname = ID) { print("ClassDec:" + $classname.text); } '{' (main_method) '}';
 
-main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}' {print("MethodDec:main");}; 
+main_method : ('def')('main') {print("MethodDec:main");} (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}' ; 
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
-main_method_body : (writeln SEMICOLON)* ('return') (expr_tot)SEMICOLON;  
+main_method_body : (writeln SEMICOLON)* ('return') (expr_tot) SEMICOLON;  
 
 /*class*/
 class_def:
@@ -27,7 +27,7 @@ class_body:
        (stm_vardef)* (method_block)* ;  
 
 method_block:
-            ('def') methodname = ID {System.out.printf("MethodDec:" + $methodname.text);} 
+            ('def')(methodname = (ID | 'main')){System.out.printf("MethodDec:" + $methodname.text);} 
 			'(' (({System.out.printf(",");} (funcvardef',')*  funcvardefprime {print("");}) 
 			 | )  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) SEMICOLON '}';
 			
@@ -73,8 +73,8 @@ statement: stm_vardef
 		   | '{' statement '}';
 
 /* IF */
-stm_if: 'if' LPAR expr_tot RPAR 'then' (statement) {print("Conditional:if");}
-		| 'if' LPAR expr_tot RPAR {print("Conditional:if");} 'then' (statement) 'else' (statement) {print("Conditional:else");} ; 
+stm_if: 'if' {print("Conditional:if");} LPAR expr_tot RPAR 'then' (statement) 
+		| 'if' {print("Conditional:if");} LPAR expr_tot RPAR  'then' (statement) 'else' {print("Conditional:else");} (statement)  ; 
 
 stm_while : ('while') { print("LOOP:While"); }  (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' ;
 
