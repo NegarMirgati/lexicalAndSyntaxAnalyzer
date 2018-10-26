@@ -16,7 +16,7 @@ main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
-main_method_body : (writeln)* ('return') (statement);  
+main_method_body : (writeln SEMICOLON)* ('return') (expr_tot)SEMICOLON;  
 
 /*class*/
 class_def:
