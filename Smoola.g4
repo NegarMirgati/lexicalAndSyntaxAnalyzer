@@ -10,7 +10,7 @@ grammar Smoola;
 prog: (main_class)(class_def)* ;
 
 /*main class and main method*/
-main_class : 'class' ID '{' (main_method)  '}';
+main_class : 'class' (classname = ID) { print("ClassDec:" + $classname.text); } '{' (main_method) '}';
 
 main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}' {print("MethodDec:main");}; 
 
@@ -20,19 +20,31 @@ main_method_body : (writeln SEMICOLON)* ('return') (expr_tot)SEMICOLON;
 
 /*class*/
 class_def:
-       (('class') classname = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text); } 
-	   | (('class') classname = ID ('extends') fatherclass = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text + "," + $fatherclass.text); }  ;
+       (('class') classname = ID { print("ClassDec:" + $classname.text); } '{' (class_body) '}') 
+	   | (('class') classname = ID ('extends') fatherclass = ID { print("ClassDec:" + $classname.text + "," + $fatherclass.text); } '{' (class_body) '}') ;
 
 class_body:
        (stm_vardef)* (method_block)* ;  
 
 method_block:
-            ('def') methodname = ID '(' ((funcvardef ',')* (funcvardef |))  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) SEMICOLON '}'
-			{print("MethodDec:" + $methodname.text);}; 
+            ('def') methodname = ID {System.out.printf("MethodDec:" + $methodname.text);} 
+			'(' (({System.out.printf(",");} (funcvardef',')*  funcvardefprime {print("");}) 
+			 | )  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) SEMICOLON '}';
+			
 
 funcvardef:
-		argname = ID ':' (primitivetype | arraytype | ID) { System.out.printf($argname.text + ",");}
+		argname = ID  {System.out.printf($argname.text + ",");} ':'
+		(   primitivetype
+			| arraytype  
+			|  ID  ) 
 		;	
+funcvardefprime:
+		argname = ID  {System.out.printf($argname.text);} ':'
+		(   primitivetype
+			| arraytype  
+			|  ID  ) 
+		;	
+
 
 // this is a expression
 function_call : get_length;
@@ -44,14 +56,14 @@ func_call : (class_object_init) '.' (ID) (LPAR)(function_arguments)(RPAR)
 
 function_arguments : (expr_tot (',') )* expr_tot | ;
 
-primitivetype:  ('int') | ('boolean') | ('string') {print("type");};
+primitivetype:  ('int') | ('boolean') | ('string') ;
 
 array_init : ('new') 'int' ('[') expr_tot (']');   // expr_tot return value must be an int, will be checked in next phases.
 
 class_object_initprime : ('new') ID LPAR RPAR ;
 class_object_init :  '('class_object_initprime')' | class_object_initprime ;
 
-arraytype : ('int') (LBRAC) (RBRAC){print("type");};
+arraytype : ('int') (LBRAC) (RBRAC);
 
 statement: stm_vardef 
 		   | stm_assign SEMICOLON 
@@ -64,29 +76,34 @@ statement: stm_vardef
 stm_if: 'if' LPAR expr_tot RPAR 'then' (statement) {print("Conditional:if");}
 		| 'if' LPAR expr_tot RPAR {print("Conditional:if");} 'then' (statement) 'else' (statement) {print("Conditional:else");} ; 
 
-stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' { print("LOOP:While"); } ;
+stm_while : ('while') { print("LOOP:While"); }  (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' ;
 
-stm_assign: (expr_tot) ASSIGN {print("assignment");} expr_tot; 
+stm_assign: (expr_tot) ASSIGN {print("Operator:=");} expr_tot; 
 
 // int, boolean, string, arraytype, class-type
-stm_vardef : 'var' (name = ID) {print("VarDec:" + $name.text + ",");} COLON (primitivetype | arraytype {print("int[]");} | classname = ID) SEMICOLON;
+stm_vardef : 'var' (name = ID) {System.out.printf("VarDec:" + $name.text + ",");} COLON 
+			( ('int') {print("int");}
+			 | ('boolean') {print("boolean");}
+			 | ('string') {print("string");}
+			 | arraytype {print("int[]");} | 
+			 classname = ID {print($classname.text);}) SEMICOLON;
 
 
 expr_tot : or_op;
 
-or_op: and_op | (and_op LOGICALOR {print("'or' operator");} or_op);
+or_op: and_op | (and_op LOGICALOR {print("Operator:||");} or_op);
 
-and_op: (equality_op LOGICALAND {print("'and' operator");} and_op) | equality_op;
+and_op: (equality_op LOGICALAND {print("Operator:&&");} and_op) | equality_op;
 
-equality_op: (comparison_op (EQUAL {print("'==' operator");} | NOTEQUAL {print("'<>' operator");}) equality_op) | comparison_op;
+equality_op: (comparison_op (EQUAL {print("Operator:==");} | NOTEQUAL {print("Operator:<>");}) equality_op) | comparison_op;
 
-comparison_op: ((add_op (GT {print("'>' operator");} | LT {print("'<' operator");}) comparison_op)) | add_op;
+comparison_op: ((add_op (GT {print("Operator:>");} | LT {print("Operator:<");}) comparison_op)) | add_op;
 
-add_op: (mult_op (ADD {print("'+' operator");} | SUB {print("'-' operator");}) add_op) | mult_op;
+add_op: (mult_op (ADD {print("Operator:+");} | SUB {print("Operator:-");}) add_op) | mult_op;
 
-mult_op: (unary_op (MULT {print("'*' operator");} | DIV {print("'/' operator");}) mult_op) | unary_op;
+mult_op: (unary_op (MULT {print("Operator:*");} | DIV {print("Operator:/");}) mult_op) | unary_op;
 
-unary_op: (operands (NOT {print("'not' operator");}| SUB {print("'-' operator");}) unary_op) | operands;
+unary_op: (operands (NOT {print("Operator:!");}| SUB {print("Operator:-");}) unary_op) | operands;
 
 operands: ( LPAR ( stm_assign | expr_tot ) RPAR) 
 	      | (ID (LBRAC (expr_tot | ID ) RBRAC))
@@ -129,16 +146,16 @@ NEW : 'new';
 
 ID  : [a-zA-Z-][a-zA-Z0-9-]*;
 
-EQUAL: '==' { print("Operator:=="); };
-NOTEQUAL: '<>' {print("Operator:<>"); }; 
-LT: '<' {print("Operator:<"); };
-GT: '>' {print("Operator:>"); };
-ADD: '+' {print("Operator:+"); };
-SUB: '-' {print("Operator:-"); };
-MULT: '*' {print("Operator:*"); };
-DIV: '/' {print("Operator:/"); }; 
-ASSIGN:'=' {print("Operator:="); };
-NOT: '!' {print("Operator:!"); };
+EQUAL: '==' ;/* { print("Operator:=="); }; */
+NOTEQUAL: '<>';// {print("Operator:<>"); };  */
+LT: '<' ;/*  //{print("Operator:<"); }; */
+GT: '>' ; /* //{print("Operator:>"); }; */
+ADD: '+'; /*  //{print("Operator:+"); }; */
+SUB: '-' ; /* //{print("Operator:-"); }; */
+MULT: '*' ; /*  //{print("Operator:*"); }; */
+DIV: '/'  ;/* //{print("Operator:/"); };  */
+ASSIGN:'=' ; /* // {print("Operator:="); }; */
+NOT: '!'  ; /* //{print("Operator:!"); }; */
 // no need to print these.
 LBRAC: '[' ;
 RBRAC: ']';
@@ -146,8 +163,8 @@ RPAR : ')';
 LPAR : '(';
 SEMICOLON : ';' ;
 COLON : ':';
-LOGICALAND : '&&' {print("Operator:&&"); };
-LOGICALOR : '||' {print("Operator:||"); };
+LOGICALAND : '&&'; /*{print("Operator:&&"); }; */
+LOGICALOR : '||' ; /* {print("Operator:||"); }; */
 COMMENT: '#'(~[\r\n])* -> skip;
 NEWLINE: ('\n')+ -> skip;
 NEWLINEPRIME : ('\r\n')+ -> skip ;   
