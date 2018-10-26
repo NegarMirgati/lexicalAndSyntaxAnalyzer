@@ -45,7 +45,7 @@ function_arguments : (expr_tot (',') )* expr_tot | ;
 
 primitivetype:  ('int') | ('boolean') | ('string') {print("type");};
 
-array_init : ('new') 'int' ('[') CONST_INT (']');
+array_init : ('new') 'int' ('[') expr_tot (']');   // expr_tot return value must be an int, will be checked in next phases.
 
 class_object_init : ('new') ID LPAR RPAR;
 
@@ -56,7 +56,7 @@ arraytype : ('int') (LBRAC) (RBRAC){print("type");};
 stm_if: 'if' LPAR expr_tot RPAR 'then' (statement)
 		| 'if' LPAR expr_tot RPAR 'then' (statement) 'else' (statement); 
 
-stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
+stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' {print('LOOP : While');} ;
 
 stm_assign: (ID ASSIGN {print("assignment");} expr_tot ); 
 
@@ -68,7 +68,8 @@ statement: stm_vardef SEMICOLON
 		   | stm_assign SEMICOLON 
 		   | stm_while 
 		   | writeln SEMICOLON
-		   stm_if;
+		   |stm_if
+		   | '{' statement '}';
 
 expr: expr_assign;
 
