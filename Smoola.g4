@@ -65,15 +65,15 @@ class_object_init :  '('class_object_init')' | class_object_initprime ;
 arraytype : ('int') (LBRAC) (RBRAC);
 
 statement: stm_vardef 
-		   | stm_assign SEMICOLON 
+		   | stm_assign SEMICOLON
 		   | stm_while 
-		   | writeln 
+		   | writeln (SEMICOLON)
 		   | stm_if
 		   | '{' statement '}';
 
 /* IF */
-stm_if: 'if' {print("Conditional:if");} LPAR expr_tot RPAR 'then' (statement) 
-		| 'if' {print("Conditional:if");} LPAR expr_tot RPAR  'then' (statement) 'else' {print("Conditional:else");} (statement)  ; 
+stm_if: 'if' {print("Conditional:if");} LPAR expr_tot RPAR 'then' ((statement) | '{' statement+ '}')
+		| 'if' {print("Conditional:if");} LPAR expr_tot RPAR  'then' ((statement) | '{' statement+ '}') 'else' {print("Conditional:else");} ((statement) | '{' statement+ '}')  ; 
 
 stm_while : ('while') { print("LOOP:While"); }  (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' ;
 
@@ -88,7 +88,9 @@ stm_vardef : 'var' (name = ID) {System.out.printf("VarDec:" + $name.text + ",");
 			 classname = ID {print($classname.text);}) SEMICOLON;
 
 
-expr_tot : or_op;
+expr_tot : assign_op;
+
+assign_op : or_op | (or_op ASSIGN {print("Operator:=");} assign_op);
 
 or_op: and_op | (and_op LOGICALOR {print("Operator:||");} or_op);
 
@@ -96,15 +98,15 @@ and_op: (equality_op LOGICALAND {print("Operator:&&");} and_op) | equality_op;
 
 equality_op: (comparison_op (EQUAL {print("Operator:==");} | NOTEQUAL {print("Operator:<>");}) equality_op) | comparison_op;
 
-comparison_op: ((add_op (GT {print("Operator:>");} | LT {print("Operator:<");}) comparison_op)) | add_op;
+comparison_op: (add_op (GT {print("Operator:>");} | LT {print("Operator:<");}) comparison_op) | add_op;
 
 add_op: (mult_op (ADD {print("Operator:+");} | SUB {print("Operator:-");}) add_op) | mult_op;
 
 mult_op: (unary_op (MULT {print("Operator:*");} | DIV {print("Operator:/");}) mult_op) | unary_op;
 
-unary_op: (operands (NOT {print("Operator:!");}| SUB {print("Operator:-");}) unary_op) | operands;
+unary_op: (operands (NOT {print("Operator:!");}| (SUB) {print("Operator:-");}) unary_op) | operands;
 
-operands: ( LPAR ( stm_assign | expr_tot ) RPAR) 
+operands: ( LPAR (expr_tot | stm_assign) RPAR) 
 	      | (ID (LBRAC (expr_tot | ID ) RBRAC))
  	      | CONST_INT 
 		  | CONST_STR 
@@ -143,7 +145,7 @@ ELSE : 'else';
 RETURN : 'return';
 NEW : 'new';
 
-ID  : [a-zA-Z-][a-zA-Z0-9-]*;
+ID  : [a-zA-Z_][a-zA-Z0-9_]*;
 
 EQUAL: '==' ;/* { print("Operator:=="); }; */
 NOTEQUAL: '<>';// {print("Operator:<>"); };  */
