@@ -12,7 +12,7 @@ prog: (main_class)(class_def)* ;
 /*main class and main method*/
 main_class : 'class' ID '{' (main_method)  '}';
 
-main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}'; 
+main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}' {print("MethodDec:main");}; 
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
@@ -20,17 +20,18 @@ main_method_body : (writeln)* ('return') (statement);
 
 /*class*/
 class_def:
-       (('Class') ID '{' (class_body) '}') {print('ClassDec: + getText());} 
-	   | (('Class') ID ('extends') ID '{' (class_body) '}') ;
+       (('Class') classname = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text); } 
+	   | (('Class') classname = ID ('extends') fatherclass = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text + "," + $fatherclass.text); }  ;
 
 class_body:
        (stm_vardef)* (method_block)* ;  
 
 method_block:
-            ('def') ID '(' (funcvardef ',')* (funcvardef |) ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) '}'; 
+            ('def') methodname = ID '(' ((funcvardef ',')* (funcvardef |))  ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) '}'
+			{print("MethodDec:" + $methodname.text);}; 
 
 funcvardef:
-		ID ':' (primitivetype | arraytype | ID )
+		argname = ID ':' (primitivetype | arraytype | ID) { System.out.printf($argname.text + ",");}
 		;	
 
 // this is a expression
@@ -53,15 +54,15 @@ arraytype : ('int') (LBRAC) (RBRAC){print("type");};
 
 
 /* IF */
-stm_if: 'if' LPAR expr_tot RPAR 'then' (statement)
-		| 'if' LPAR expr_tot RPAR 'then' (statement) 'else' (statement); 
+stm_if: 'if' LPAR expr_tot RPAR 'then' (statement) {print("Conditional:if");}
+		| 'if' LPAR expr_tot RPAR {print("Conditional:if");} 'then' (statement) 'else' (statement) {print("Conditional:else");} ; 
 
-stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' {print('LOOP : While');} ;
+stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' { print("LOOP:While"); } ;
 
 stm_assign: (ID ASSIGN {print("assignment");} expr_tot ); 
 
 // int, boolean, string, arraytype, class-type
-stm_vardef : 'var' (ID) COLON (primitivetype | arraytype | ID) ;
+stm_vardef : 'var' (name = ID) {print("VarDec:" + $name.text + ",");} COLON (primitivetype | arraytype {print("int[]");} | classname = ID) ;
 
 
 statement: stm_vardef SEMICOLON 
@@ -89,17 +90,17 @@ expr_eq_tmp: (EQUAL | NOTEQUAL) expr_cmp expr_eq_tmp | ;
 
 expr_cmp: expr_add expr_cmp_tmp ;
 
-expr_cmp_tmp: ('<' | '>') expr_add expr_cmp_tmp| ;
+expr_cmp_tmp: ( LT | GT ) expr_add expr_cmp_tmp| ;
 
 expr_add: expr_mult expr_add_tmp;
 
-expr_add_tmp : ('+' | '-') expr_mult expr_add_tmp | ;
+expr_add_tmp : ( ADD | SUB ) expr_mult expr_add_tmp | ;
 
 expr_mult: expr_un expr_mult_tmp;
 
-expr_mult_tmp: ('*' | '/') expr_un expr_mult_tmp | ;
+expr_mult_tmp: ( MULT | DIV ) expr_un expr_mult_tmp | ;
 
-expr_un : ('!' | '-') expr_un | expr_arr ;
+expr_un : ( NOT | SUB) expr_un | expr_arr ;
 
 expr_arr: expr_tot expr_arr_tmp ;
 
@@ -135,25 +136,28 @@ ELSE : 'else';
 RETURN : 'return';
 NEW : 'new';
 
-ID  : [a-zA-Z-][a-zA-Z0-9-]* {print("ID "+getText());};
+ID  : [a-zA-Z-][a-zA-Z0-9-]*;
 
-EQUAL: '==';
-NOTEQUAL: '<>';
-LT: '<';
-GT: '>';
-ADD: '+';
-SUB: '-';
-MULT: '*';
-DIV: '/';
-ASSIGN:'=';
-LBRAC: '[';
+EQUAL: '==' { print("Operator:=="); };
+NOTEQUAL: '<>' {print("Operator:<>"); }; 
+LT: '<' {print("Operator:<"); };
+GT: '>' {print("Operator:>"); };
+ADD: '+' {print("Operator:+"); };
+SUB: '-' {print("Operator:-"); };
+MULT: '*' {print("Operator:*"); };
+DIV: '/' {print("Operator:/"); }; 
+ASSIGN:'=' {print("Operator:="); };
+NOT: '!' {print("Operator:!"); };
+// no need to print these.
+LBRAC: '[' ;
 RBRAC: ']';
 RPAR : ')';
 LPAR : '(';
 SEMICOLON : ';' ;
 COLON : ':';
-LOGICALAND : '&&';
-LOGICALOR : '||';
+LOGICALAND : '&&' {print("Operator:&&"); };
+LOGICALOR : '||' {print("Operator:||"); };
 COMMENT: '#'(~[\r\n])* -> skip;
-NEWLINE: ('\n')+ -> skip;   
-WS: [ \t] -> skip ;
+NEWLINE: ('\n')+ -> skip;
+NEWLINEPRIME : ('\r\n')+ -> skip ;   
+WS: [ \t\r] -> skip ;
