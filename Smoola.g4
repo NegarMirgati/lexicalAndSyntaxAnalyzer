@@ -12,35 +12,45 @@ prog:	(main_class)(class_def)* ;
 /*main class and main method*/
 main_class : 'class' ID '{' (main_method)  '}';
 
-main_method : ('def')('main()')(COLON) INT '{' (main_method_body) '}';     ////// not completed
+main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}';     ////// not completed
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
 main_method_body : (writeln)* ('return') (statement);  
 
-// this is a expression
-// are method names the same is identifier names ?
-function_call : 'new' (ID)(LPAR)'.'(ID)(LPAR)(function_arguments)(RPAR)(SEMICOLON) 
-				| 'this.' (ID)(LPAR)(function_arguments)(RPAR)(SEMICOLON);
-
-function_arguments : (variable (',') )* variable | ;
-
 /*class*/
-
 class_def:
        (('Class') ID '{' (class_body) '}') {print('ClassDec: + getText());} 
 	   | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
 
 class_body:
-       (primitivevardef)* (method_block)* ;  
+       (stm_vardef)* (method_block)* ;  
+
+method_block:
+            ('def') ID '(' (funcvardef ',')* (funcvardef |) ')' ':' (primitivetype | arraytype | ID) '{'(statement)* ('return')(return_val) '}'; 
+
+funcvardef:
+		ID ':' (primitivetype | arraytype | ID )
+		;	
+
+// this is a expression
+function_call : get_length;
+get_length : func_call | (ID)('.')('length');
+func_call : 'new' (ID) (LPAR) '.' (ID) (LPAR)(function_arguments)(RPAR)
+				| 'this.' (ID)(LPAR)(function_arguments)(RPAR)
+				| (ID) ('.')(ID) (LPAR)(function_arguments)(RPAR);
+
+
+function_arguments : (expr (',') )* expr | ;
 
 primitivetype:
-       ('int') | ('boolean') | ('string') | arraytype {print("type");};
-
-arraytype : ('int') (LBRAC) (RBRAC);
+       ('int') | ('boolean') | ('string') {print("type");};
 
 array_init : 
-		('new') 'int' ID '[' INT ']';
+		('new') 'int' ID '[' CONST_INT ']';
+
+arraytype : ('int') (LBRAC) (RBRAC){print("type");};
+
 
 /* IF */
 stm_if: 'if' LPAR expr_tot RPAR 'then' (statement)
@@ -50,8 +60,9 @@ stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (substatement)+ '}' {print('L
 
 stm_assign: (ID ASSIGN {print("assignment");} expr_tot ) SEMICOLON; 
 
-stm_vardef : 'var' (ID) COLON (primitivetype | ID) ;
-// ID for class type
+// int, boolean, string, arraytype, class-type
+stm_vardef : 'var' (ID) COLON (primitivetype | arraytype | ID) ;
+
 
 statement: stm_vardef SEMICOLON 
 		   | stm_assign SEMICOLON 
@@ -89,39 +100,18 @@ expr_mult_tmp: ('*' | '/') expr_un expr_mult_tmp | ;
 
 expr_un : ('!' | '-') expr_un | expr_arr ;
 
-expr_arr: expr_other expr_arr_tmp ;
+expr_arr: expr_tot expr_arr_tmp ;
 
 expr_arr_tmp: '[' expr ']' expr_arr_tmp | ;
 
-expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | '(' expr ')');
+expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | function_call | '(' expr ')');
 																															
-/* metod  */
-function:
-		ID '(' ((variable ',')* variable |) ')'
-		;	
-
 return_val : statement;  // in this phase we do not check the statement type after return
-  
-method_declare:
-		('def') ID '(' (vardef ',')* (vardef) ')' |  ID '(' ')'
-		;		
-vardef:
-		ID ':' primitivetype
-		;		
-method_block:
-            ('def') ID '(' (vardef ',')* (vardef |) ')' ':' primitivetype  '{' (NEWLINE)* ( statement ) ('return')(return_val) '}'; 
-
-primitivevardef:			//type baraye vardef mitooneh name ye class dige bash && 
-         ('var') ID (COLON) (primitivetype) (SEMICOLON)
-       ;   
-
+  	 
 writeln : 'writeln' LPAR (expr_tot) RPAR; //// array
 
-/* primitive types */   
-variable: ID | CONST_INT | CONST_BOOLEAN | CONST_BOOLEAN |  ;
-
 CONST_INT : [0-9]+;
-CONST_STRING : '"' ' .*? ' '"';
+CONST_STR : '"' ' .*? ' '"';
 CONST_BOOLEAN:  TRUE | FALSE ;
 
 // KEYWORDS
@@ -165,11 +155,4 @@ LOGICALAND : '&&';
 LOGICALOR : '||';
 COMMENT: '#'(~[\r\n])* -> skip;
 NEWLINE: ('\n')+ -> skip;   
-WS:
-    	[ \t] -> skip
-;
-
-
-
-
-
+WS: [ \t] -> skip ;
