@@ -7,12 +7,12 @@ grammar Smoola;
   }
 }
 
-prog:	(main_class)(class_def)* ;
+prog: (main_class)(class_def)* ;
 
 /*main class and main method*/
 main_class : 'class' ID '{' (main_method)  '}';
 
-main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}';     ////// not completed
+main_method : ('def')('main') (LPAR) (RPAR) (COLON) INT '{' (main_method_body) '}'; 
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
@@ -21,7 +21,7 @@ main_method_body : (writeln)* ('return') (statement);
 /*class*/
 class_def:
        (('Class') ID '{' (class_body) '}') {print('ClassDec: + getText());} 
-	   | (('Class') ID ('extends') ID '{' (class_body) + ('\n')* '}') ;
+	   | (('Class') ID ('extends') ID '{' (class_body) '}') ;
 
 class_body:
        (stm_vardef)* (method_block)* ;  
@@ -41,13 +41,13 @@ func_call : 'new' (ID) (LPAR) '.' (ID) (LPAR)(function_arguments)(RPAR)
 				| (ID) ('.')(ID) (LPAR)(function_arguments)(RPAR);
 
 
-function_arguments : (expr (',') )* expr | ;
+function_arguments : (expr_tot (',') )* expr_tot | ;
 
-primitivetype:
-       ('int') | ('boolean') | ('string') {print("type");};
+primitivetype:  ('int') | ('boolean') | ('string') {print("type");};
 
-array_init : 
-		('new') 'int' ID '[' CONST_INT ']';
+array_init : ('new') 'int' ('[') CONST_INT (']');
+
+class_object_init : ('new') ID LPAR RPAR;
 
 arraytype : ('int') (LBRAC) (RBRAC){print("type");};
 
@@ -58,7 +58,7 @@ stm_if: 'if' LPAR expr_tot RPAR 'then' (statement)
 
 stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (substatement)+ '}' {print('LOOP : While');} ;
 
-stm_assign: (ID ASSIGN {print("assignment");} expr_tot ) SEMICOLON; 
+stm_assign: (ID ASSIGN {print("assignment");} expr_tot ); 
 
 // int, boolean, string, arraytype, class-type
 stm_vardef : 'var' (ID) COLON (primitivetype | arraytype | ID) ;
@@ -104,11 +104,12 @@ expr_arr: expr_tot expr_arr_tmp ;
 
 expr_arr_tmp: '[' expr ']' expr_arr_tmp | ;
 
-expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | function_call | '(' expr ')');
+expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | array_init | class_object_init | function_call | '(' expr ')');
 																															
 return_val : statement;  // in this phase we do not check the statement type after return
-  	 
-writeln : 'writeln' LPAR (expr_tot) RPAR; //// array
+
+// this is a statement, doesn't have return value  	 
+writeln : 'writeln' LPAR (expr_tot) RPAR; 
 
 CONST_INT : [0-9]+;
 CONST_STR : '"' ' .*? ' '"';
@@ -132,7 +133,6 @@ WHILE : 'while';
 ELSE : 'else';
 RETURN : 'return';
 NEW : 'new';
-
 
 ID  : [a-zA-Z-][a-zA-Z0-9-]* {print("ID "+getText());};
 
