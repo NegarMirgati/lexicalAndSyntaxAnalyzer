@@ -66,7 +66,7 @@ stm_if: 'if' LPAR expr_tot RPAR 'then' (statement) {print("Conditional:if");}
 
 stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' { print("LOOP:While"); } ;
 
-stm_assign: (ID ASSIGN {print("assignment");} expr_tot ); 
+stm_assign: (expr_tot) ASSIGN {print("assignment");} expr_tot; 
 
 // int, boolean, string, arraytype, class-type
 stm_vardef : 'var' (name = ID) {print("VarDec:" + $name.text + ",");} COLON (primitivetype | arraytype {print("int[]");} | classname = ID) SEMICOLON;
