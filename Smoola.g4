@@ -20,8 +20,8 @@ main_method_body : (writeln SEMICOLON)* ('return') (expr_tot)SEMICOLON;
 
 /*class*/
 class_def:
-       (('Class') classname = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text); } 
-	   | (('Class') classname = ID ('extends') fatherclass = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text + "," + $fatherclass.text); }  ;
+       (('class') classname = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text); } 
+	   | (('class') classname = ID ('extends') fatherclass = ID '{' (class_body) '}') { print("ClassDec:" + $classname.text + "," + $fatherclass.text); }  ;
 
 class_body:
        (stm_vardef)* (method_block)* ;  
@@ -39,7 +39,7 @@ function_call : get_length;
 get_length : func_call | (ID)('.')('length');
 func_call : (class_object_init) '.' (ID) (LPAR)(function_arguments)(RPAR)
 				| 'this.' (ID)(LPAR)(function_arguments)(RPAR)
-				| (ID) ('.')(ID) (LPAR)(function_arguments)(RPAR);
+				| (ID) ('.')(ID) (LPAR)(function_arguments)(RPAR); 
 
 
 function_arguments : (expr_tot (',') )* expr_tot | ;
@@ -53,6 +53,12 @@ class_object_init :  '('class_object_initprime')' | class_object_initprime ;
 
 arraytype : ('int') (LBRAC) (RBRAC){print("type");};
 
+statement: stm_vardef 
+		   | stm_assign SEMICOLON 
+		   | stm_while 
+		   | writeln 
+		   | stm_if
+		   | '{' statement '}';
 
 /* IF */
 stm_if: 'if' LPAR expr_tot RPAR 'then' (statement) {print("Conditional:if");}
@@ -63,51 +69,35 @@ stm_while : ('while') (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' { print("LOO
 stm_assign: (ID ASSIGN {print("assignment");} expr_tot ); 
 
 // int, boolean, string, arraytype, class-type
-stm_vardef : 'var' (name = ID) {print("VarDec:" + $name.text + ",");} COLON (primitivetype | arraytype {print("int[]");} | classname = ID) ;
+stm_vardef : 'var' (name = ID) {print("VarDec:" + $name.text + ",");} COLON (primitivetype | arraytype {print("int[]");} | classname = ID) SEMICOLON;
 
 
-statement: stm_vardef SEMICOLON 
-		   | stm_assign SEMICOLON 
-		   | stm_while 
-		   | writeln SEMICOLON
-		   | stm_if
-		   | '{' statement '}';
+expr_tot : or_op;
 
-expr: expr_assign;
+or_op: and_op | (and_op LOGICALOR {print("'or' operator");} or_op);
 
-expr_assign: expr_or (ASSIGN) expr_assign | expr_or;
+and_op: (equality_op LOGICALAND {print("'and' operator");} and_op) | equality_op;
 
-expr_or: expr_and expr_or_tmp;
+equality_op: (comparison_op (EQUAL {print("'==' operator");} | NOTEQUAL {print("'<>' operator");}) equality_op) | comparison_op;
 
-expr_or_tmp: (LOGICALOR) expr_and expr_or_tmp| ;
+comparison_op: ((add_op (GT {print("'>' operator");} | LT {print("'<' operator");}) comparison_op)) | add_op;
 
-expr_and: expr_eq expr_and_tmp;
+add_op: (mult_op (ADD {print("'+' operator");} | SUB {print("'-' operator");}) add_op) | mult_op;
 
-expr_and_tmp: (LOGICALAND) expr_eq expr_and_tmp | ;
+mult_op: (unary_op (MULT {print("'*' operator");} | DIV {print("'/' operator");}) mult_op) | unary_op;
 
-expr_eq: expr_cmp expr_eq_tmp;
+unary_op: (operands (NOT {print("'not' operator");}| SUB {print("'-' operator");}) unary_op) | operands;
 
-expr_eq_tmp: (EQUAL | NOTEQUAL) expr_cmp expr_eq_tmp | ;
+operands: ( LPAR ( stm_assign | expr_tot ) RPAR) 
+	      | (ID (LBRAC (expr_tot | ID ) RBRAC))
+ 	      | CONST_INT 
+		  | CONST_STR 
+		  | CONST_BOOLEAN 
+		  | class_object_init 
+		  | function_call 
+		  | array_init 
+		  | ID;
 
-expr_cmp: expr_add expr_cmp_tmp ;
-
-expr_cmp_tmp: ( LT | GT ) expr_add expr_cmp_tmp| ;
-
-expr_add: expr_mult expr_add_tmp;
-
-expr_add_tmp : ( ADD | SUB ) expr_mult expr_add_tmp | ;
-
-expr_mult: expr_un expr_mult_tmp;
-
-expr_mult_tmp: ( MULT | DIV ) expr_un expr_mult_tmp | ;
-
-expr_un : ( NOT | SUB) expr_un | expr_arr ;
-
-expr_arr: expr_tot expr_arr_tmp ;
-
-expr_arr_tmp: '[' expr ']' expr_arr_tmp | ;
-
-expr_tot: (CONST_INT | CONST_STR | ID | CONST_BOOLEAN | array_init | class_object_init | function_call | '(' expr ')');
 																															
 return_val : expr_tot;  // in this phase we do not check the statement type after return
 
