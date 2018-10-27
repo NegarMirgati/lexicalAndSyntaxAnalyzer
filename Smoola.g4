@@ -64,16 +64,25 @@ class_object_init :  '('class_object_init')' | class_object_initprime ;
 
 arraytype : ('int') (LBRAC) (RBRAC);
 
+statement_for_if : stm_vardef 
+		   | stm_assign SEMICOLON
+		   | stm_while 
+		   | writeln (SEMICOLON)
+		   | '{' statement '}';
+
 statement: stm_vardef 
 		   | stm_assign SEMICOLON
 		   | stm_while 
 		   | writeln (SEMICOLON)
 		   | stm_if
-		   | '{' statement '}';
+		   | stm_ifelse
+		   | '{' statement '}';	
 
 /* IF */
-stm_if: 'if' {print("Conditional:if");} LPAR expr_tot RPAR 'then' ((statement) | '{' statement+ '}')
-		| 'if' {print("Conditional:if");} LPAR expr_tot RPAR  'then' ((statement) | '{' statement+ '}') 'else' {print("Conditional:else");} ((statement) | '{' statement+ '}')  ; 
+stm_if: 'if' {print("Conditional:if");} LPAR expr_tot RPAR 
+		'then' ((statement) | '{' statement+ '}') ;
+stm_ifelse : 'if' {print("Conditional:if");} LPAR expr_tot RPAR  'then' 
+			((statement_for_if | stm_ifelse) | '{' (statement_for_if | stm_ifelse)+ '}') 'else' {print("Conditional:else");} ((statement_for_if | stm_ifelse) | '{' (statement_for_if | stm_ifelse)+ '}')  ; 
 
 stm_while : ('while') { print("LOOP:While"); }  (LPAR) (expr_tot) (RPAR) '{' (statement)+ '}' ;
 
