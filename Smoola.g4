@@ -113,11 +113,14 @@ comparison_op: (add_op (GT {print("Operator:>");} | LT {print("Operator:<");}) c
 
 add_op: (mult_op (ADD {print("Operator:+");} | SUB {print("Operator:-");}) add_op) | mult_op;
 
-mult_op: (unary_op (MULT {print("Operator:*");} | DIV {print("Operator:/");}) mult_op) | unary_op;
+mult_op: (operands (MULT {print("Operator:*");} | DIV {print("Operator:/");}) mult_op) | operands;
 
-unary_op: (operands(NOT {print("Operator:!");}  | (SUB) {print("Operator:-");}) unary_op) | operands;
+//unary_op : operands | (NOT) operands | (SUB) operands;
+//unary_op: operands | ( (NOT {print("Operator:!");}  | (SUB) {print("Operator:-");}) unary_op operands);
 
 operands: ( LPAR (expr_tot ) RPAR) 
+		  | NOT {print("Operator:!");} expr_tot
+		  | SUB {print("Operator:-");} expr_tot
 	      | (ID (LBRAC (expr_tot | ID ) RBRAC))
  	      | CONST_INT 
 		  | CONST_STR 
