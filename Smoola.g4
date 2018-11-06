@@ -16,7 +16,7 @@ main_method : ('def')('main') {print("MethodDec:main");} (LPAR) (RPAR) (COLON) I
 
 // main method can't have any function calls rather that writeln because those are expressions
 // and we don't have any variables in main class and main method 
-main_method_body : (writeln SEMICOLON)* ('return') (expr_tot) SEMICOLON;  
+main_method_body : ((writeln | function_call) SEMICOLON)* ('return') (expr_tot) SEMICOLON;  
 
 /*class*/
 class_def:
@@ -68,6 +68,7 @@ statement_for_if : stm_vardef
 		   | stm_assign SEMICOLON
 		   | stm_while 
 		   | writeln (SEMICOLON)
+		   | function_call (SEMICOLON)
 		   | '{' statement '}';
 
 statement: stm_vardef 
@@ -76,6 +77,7 @@ statement: stm_vardef
 		   | writeln (SEMICOLON)
 		   | stm_if
 		   | stm_ifelse
+		   | function_call (SEMICOLON)
 		   | '{' statement '}';	
 
 /* IF */
@@ -113,9 +115,9 @@ add_op: (mult_op (ADD {print("Operator:+");} | SUB {print("Operator:-");}) add_o
 
 mult_op: (unary_op (MULT {print("Operator:*");} | DIV {print("Operator:/");}) mult_op) | unary_op;
 
-unary_op: (operands (NOT {print("Operator:!");}| (SUB) {print("Operator:-");}) unary_op) | operands;
+unary_op: (operands(NOT {print("Operator:!");}  | (SUB) {print("Operator:-");}) unary_op) | operands;
 
-operands: ( LPAR (expr_tot | stm_assign) RPAR) 
+operands: ( LPAR (expr_tot ) RPAR) 
 	      | (ID (LBRAC (expr_tot | ID ) RBRAC))
  	      | CONST_INT 
 		  | CONST_STR 
